@@ -18,7 +18,9 @@
 	export let history;
 
 	export let sourceIds = [];
+
 	export let onSourceClick = () => {};
+	export let onTaskClick = () => {};
 
 	let tokens = [];
 
@@ -44,6 +46,7 @@
 		{history}
 		{id}
 		{save}
+		{onTaskClick}
 		{onSourceClick}
 		on:update={(e) => {
 			dispatch('update', e.detail);

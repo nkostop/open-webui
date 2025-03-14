@@ -4,16 +4,15 @@
 
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { onMount, tick, getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	const dispatch = createEventDispatcher();
 
+	import { config, models, settings, temporaryChatEnabled, TTSWorker, user } from '$lib/stores';
 	import {
-		config,
-		models,
-		settings,
-		user,
 		isFinishGenRes,
 		showBottomArtifacts,
 		showLeftArtifacts,
@@ -41,13 +40,14 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import WebSearchResults from './ResponseMessage/WebSearchResults.svelte';
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
+
+	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+
 	import Error from './Error.svelte';
 	import Citations from './Citations.svelte';
 	import CodeExecutions from './CodeExecutions.svelte';
-
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
 	import ContentRenderer from './ContentRenderer.svelte';
+	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import { createNewFeedback, getFeedbackById, updateFeedbackById } from '$lib/apis/evaluations';
 	import { getChatById } from '$lib/apis/chats';
 	import { generateTags } from '$lib/apis';
@@ -136,6 +136,9 @@
 	export let isLastMessage = true;
 	export let readOnly = false;
 
+	let buttonsContainerElement: HTMLDivElement;
+	let showDeleteConfirm = false;
+
 	let model = null;
 	$: model = $models.find((m) => m.id === message.model);
 
@@ -204,62 +207,7 @@
 
 		speaking = true;
 
-		if ($config.audio.tts.engine !== '') {
-			loadingSpeech = true;
-
-			const messageContentParts: string[] = getMessageContentParts(
-				message.content,
-				$config?.audio?.tts?.split_on ?? 'punctuation'
-			);
-
-			if (!messageContentParts.length) {
-				console.log('No content to speak');
-				toast.info($i18n.t('No content to speak'));
-
-				speaking = false;
-				loadingSpeech = false;
-				return;
-			}
-
-			console.debug('Prepared message content for TTS', messageContentParts);
-
-			audioParts = messageContentParts.reduce(
-				(acc, _sentence, idx) => {
-					acc[idx] = null;
-					return acc;
-				},
-				{} as typeof audioParts
-			);
-
-			let lastPlayedAudioPromise = Promise.resolve(); // Initialize a promise that resolves immediately
-
-			for (const [idx, sentence] of messageContentParts.entries()) {
-				const res = await synthesizeOpenAISpeech(
-					localStorage.token,
-					$settings?.audio?.tts?.defaultVoice === $config.audio.tts.voice
-						? ($settings?.audio?.tts?.voice ?? $config?.audio?.tts?.voice)
-						: $config?.audio?.tts?.voice,
-					sentence
-				).catch((error) => {
-					console.error(error);
-					toast.error(`${error}`);
-
-					speaking = false;
-					loadingSpeech = false;
-				});
-
-				if (res) {
-					const blob = await res.blob();
-					const blobUrl = URL.createObjectURL(blob);
-					const audio = new Audio(blobUrl);
-					audio.playbackRate = $settings.audio?.tts?.playbackRate ?? 1;
-
-					audioParts[idx] = audio;
-					loadingSpeech = false;
-					lastPlayedAudioPromise = lastPlayedAudioPromise.then(() => playAudio(idx));
-				}
-			}
-		} else {
+		if ($config.audio.tts.engine === '') {
 			let voices = [];
 			const getVoicesLoop = setInterval(() => {
 				voices = speechSynthesis.getVoices();
@@ -294,6 +242,97 @@
 					speechSynthesis.speak(speak);
 				}
 			}, 100);
+		} else {
+			loadingSpeech = true;
+
+			const messageContentParts: string[] = getMessageContentParts(
+				message.content,
+				$config?.audio?.tts?.split_on ?? 'punctuation'
+			);
+
+			if (!messageContentParts.length) {
+				console.log('No content to speak');
+				toast.info($i18n.t('No content to speak'));
+
+				speaking = false;
+				loadingSpeech = false;
+				return;
+			}
+
+			console.debug('Prepared message content for TTS', messageContentParts);
+
+			audioParts = messageContentParts.reduce(
+				(acc, _sentence, idx) => {
+					acc[idx] = null;
+					return acc;
+				},
+				{} as typeof audioParts
+			);
+
+			let lastPlayedAudioPromise = Promise.resolve(); // Initialize a promise that resolves immediately
+
+			if ($settings.audio?.tts?.engine === 'browser-kokoro') {
+				if (!$TTSWorker) {
+					await TTSWorker.set(
+						new KokoroWorker({
+							dtype: $settings.audio?.tts?.engineConfig?.dtype ?? 'fp32'
+						})
+					);
+
+					await $TTSWorker.init();
+				}
+
+				for (const [idx, sentence] of messageContentParts.entries()) {
+					const blob = await $TTSWorker
+						.generate({
+							text: sentence,
+							voice: $settings?.audio?.tts?.voice ?? $config?.audio?.tts?.voice
+						})
+						.catch((error) => {
+							console.error(error);
+							toast.error(`${error}`);
+
+							speaking = false;
+							loadingSpeech = false;
+						});
+
+					if (blob) {
+						const audio = new Audio(blob);
+						audio.playbackRate = $settings.audio?.tts?.playbackRate ?? 1;
+
+						audioParts[idx] = audio;
+						loadingSpeech = false;
+						lastPlayedAudioPromise = lastPlayedAudioPromise.then(() => playAudio(idx));
+					}
+				}
+			} else {
+				for (const [idx, sentence] of messageContentParts.entries()) {
+					const res = await synthesizeOpenAISpeech(
+						localStorage.token,
+						$settings?.audio?.tts?.defaultVoice === $config.audio.tts.voice
+							? ($settings?.audio?.tts?.voice ?? $config?.audio?.tts?.voice)
+							: $config?.audio?.tts?.voice,
+						sentence
+					).catch((error) => {
+						console.error(error);
+						toast.error(`${error}`);
+
+						speaking = false;
+						loadingSpeech = false;
+					});
+
+					if (res) {
+						const blob = await res.blob();
+						const blobUrl = URL.createObjectURL(blob);
+						const audio = new Audio(blobUrl);
+						audio.playbackRate = $settings.audio?.tts?.playbackRate ?? 1;
+
+						audioParts[idx] = audio;
+						loadingSpeech = false;
+						lastPlayedAudioPromise = lastPlayedAudioPromise.then(() => playAudio(idx));
+					}
+				}
+			}
 		}
 	};
 
@@ -487,6 +526,18 @@
 		// console.log('ResponseMessage mounted');
 
 		await tick();
+		if (buttonsContainerElement) {
+			console.log(buttonsContainerElement);
+			buttonsContainerElement.addEventListener('wheel', function (event) {
+				// console.log(event.deltaY);
+
+				event.preventDefault();
+				if (event.deltaY !== 0) {
+					// Adjust horizontal scroll position based on vertical scroll
+					buttonsContainerElement.scrollLeft += event.deltaY;
+				}
+			});
+		}
 	});
 
 	let dots = '';
@@ -531,13 +582,21 @@
 	}
 </script>
 
+<DeleteConfirmDialog
+	bind:show={showDeleteConfirm}
+	title={$i18n.t('Delete message?')}
+	on:confirm={() => {
+		deleteMessageHandler();
+	}}
+/>
+
 {#key message.id}
 	<div
 		class=" flex w-full message-{message.id}"
 		id="message-{message.id}"
 		dir={$settings.chatDirection}
 	>
-		<div class={`flex-shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
+		<div class={`shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
 			<ProfileImage
 				src={model?.info?.meta?.profile_image_url ??
 					($i18n.language === 'dg-DG' ? `/doge.png` : `/static/favicon.png`)}
@@ -660,7 +719,7 @@
 								<textarea
 									id="message-edit-{message.id}"
 									bind:this={editTextAreaElement}
-									class=" bg-transparent outline-none w-full resize-none"
+									class=" bg-transparent outline-hidden w-full resize-none"
 									bind:value={editedContent}
 									on:input={(e) => {
 										e.target.style.height = '';
@@ -835,11 +894,32 @@
 										floatingButtons={message?.done}
 										save={!readOnly}
 										{model}
-										onSourceClick={(e) => {
-											const sourceButton = document.getElementById(`source-${e}`);
+										onTaskClick={async (e) => {
+											console.log(e);
+										}}
+										onSourceClick={async (id, idx) => {
+											console.log(id, idx);
+											let sourceButton = document.getElementById(`source-${message.id}-${idx}`);
+											const sourcesCollapsible = document.getElementById(`collapsible-sources`);
 
 											if (sourceButton) {
 												sourceButton.click();
+											} else if (sourcesCollapsible) {
+												// Open sources collapsible so we can click the source button
+												sourcesCollapsible
+													.querySelector('div:first-child')
+													.dispatchEvent(new PointerEvent('pointerup', {}));
+
+												// Wait for next frame to ensure DOM updates
+												await new Promise((resolve) => {
+													requestAnimationFrame(() => {
+														requestAnimationFrame(resolve);
+													});
+												});
+
+												// Try clicking the source button again
+												sourceButton = document.getElementById(`source-${message.id}-${idx}`);
+												sourceButton && sourceButton.click();
 											}
 										}}
 										onAddMessages={({ modelId, parentId, messages }) => {
@@ -875,7 +955,7 @@
 								{/if}
 
 								{#if (message?.sources || message?.citations) && (model?.info?.meta?.capabilities?.citations ?? true)}
-									<Citations sources={message?.sources ?? message?.citations} />
+									<Citations id={message?.id} sources={message?.sources ?? message?.citations} />
 								{/if}
 
 								{#if message.code_executions}
@@ -887,10 +967,11 @@
 				</div>
 
 				{#if !edit}
-					{#if message.done || siblings.length > 1}
-						<div
-							class=" flex justify-start overflow-x-auto buttons text-gray-600 dark:text-gray-500 mt-0.5"
-						>
+					<div
+						bind:this={buttonsContainerElement}
+						class="flex justify-start overflow-x-auto buttons text-gray-600 dark:text-gray-500 mt-0.5"
+					>
+						{#if message.done || siblings.length > 1}
 							{#if siblings.length > 1}
 								<div class="flex self-center min-w-fit" dir="ltr">
 									<button
@@ -1187,7 +1268,7 @@
 								{/if}
 
 								{#if !readOnly}
-									{#if $config?.features.enable_message_rating ?? true}
+									{#if !$temporaryChatEnabled && ($config?.features.enable_message_rating ?? true)}
 										<Tooltip content={$i18n.t('Good Response')} placement="bottom">
 											<button
 												class="{isLastMessage
@@ -1298,7 +1379,6 @@
 
 									<Tooltip content={$i18n.t('Regenerate')} placement="bottom">
 										<button
-											id="regenerate-response-btn"
 											type="button"
 											class="{isLastMessage
 												? 'visible'
@@ -1346,7 +1426,7 @@
 													? 'visible'
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition regenerate-response-button"
 												on:click={() => {
-													deleteMessageHandler();
+													showDeleteConfirm = true;
 												}}
 											>
 												<svg
@@ -1399,8 +1479,8 @@
 									{/if}
 								{/if}
 							{/if}
-						</div>
-					{/if}
+						{/if}
+					</div>
 
 					{#if message.done && showRateComment}
 						<RateComment
