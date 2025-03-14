@@ -3,7 +3,7 @@
 
 	import { v4 as uuidv4 } from 'uuid';
 
-	import { getContext, onMount, tick, onDestroy } from 'svelte';
+	import { getContext, onMount, tick, onDestroy, createEventDispatcher } from 'svelte';
 	import { copyToClipboard } from '$lib/utils';
 	import { isFinishGenRes, showArtifacts, showBottomArtifacts, showControls } from '$lib/stores';
 

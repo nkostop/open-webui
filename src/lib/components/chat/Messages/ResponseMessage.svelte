@@ -557,11 +557,12 @@
 	let status_ai_msg = '';
 	$: if (message.content && message.content.includes('Thinking...')) {
 		status_ai_msg = 'Thinking';
-		if (message.content && message.content.includes('Building...')) {
-			status_ai_msg = 'Generating the article. It might take several minutes, please wait';
-			if (message.done) {
-				status_ai_msg = 'Building Process Completed';
-			}
+	}
+
+	$: if (message.content && message.content.includes('Building...')) {
+		status_ai_msg = 'Generating the article. It might take several minutes, please wait';
+		if (message.done) {
+			status_ai_msg = 'Building Process Completed';
 		}
 	}
 
@@ -571,11 +572,12 @@
 			document.getElementById('end-of-messages')?.scrollIntoView({ behavior: 'smooth' });
 		}, 300);
 	} else {
+		console.log(33333, status_ai_msg, message.content);
 		isFinishGenRes.set(false);
-		showBottomArtifacts.set(false);
-		showLeftArtifacts.set(false);
-		showArtifacts.set(false);
-		showControls.set(false);
+		// showBottomArtifacts.set(false);
+		// showLeftArtifacts.set(false);
+		// showArtifacts.set(false);
+		// showControls.set(false);
 		// setTimeout(() => {
 		// 	document.getElementById('end-of-messages')?.scrollIntoView({ behavior: 'smooth' });
 		// }, 1200);
