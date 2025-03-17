@@ -120,10 +120,10 @@
 			}
 		});
 
-		// if (contents.length === 0) {
-		// 	showRightArtifacts.set(false);
-		// 	showRightArtifacts.set(false);
-		// }
+		if (contents.length === 0) {
+			showRightArtifacts.set(false);
+			showRightArtifacts.set(false);
+		}
 
 		selectedContentIdx = contents ? contents.length - 1 : 0;
 	};

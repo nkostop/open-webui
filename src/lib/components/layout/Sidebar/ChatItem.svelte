@@ -25,7 +25,11 @@
 		pinnedChats,
 		showSidebar,
 		currentChatPage,
-		tags
+		tags,
+		showRightArtifacts,
+		showBottomArtifacts,
+		rightHistory,
+		bottomHistory
 	} from '$lib/stores';
 
 	import ChatMenu from './ChatMenu.svelte';
@@ -114,6 +118,11 @@
 		});
 
 		if (res) {
+			showRightArtifacts.set(false);
+			showBottomArtifacts.set(false);
+			rightHistory.set({ messages: [], currentId: '' });
+			bottomHistory.set({ messages: [], currentId: '' });
+
 			tags.set(await getAllTags(localStorage.token));
 			if ($chatId === id) {
 				await goto('/');

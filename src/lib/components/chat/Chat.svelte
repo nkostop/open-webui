@@ -700,6 +700,11 @@
 		await showCallOverlay.set(false);
 		await showOverview.set(false);
 		await showArtifacts.set(false);
+		await showRightArtifacts.set(false);
+		await showBottomArtifacts.set(false);
+
+		rightHistory.set({ currentId: '', messages: [] });
+		bottomHistory.set({ currentId: '', messages: [] });
 
 		if ($page.url.pathname.includes('/c/')) {
 			window.history.replaceState(history.state, '', `/`);
@@ -1878,10 +1883,7 @@
 							)
 						}
 					});
-					showBottomArtifacts.set(false);
-					setTimeout(() => {
-						showBottomArtifacts.set(true);
-					}, 200);
+					showBottomArtifacts.set(true);
 				}
 			}
 			if (last_message.content.includes('OpenRightArtifacts')) {
@@ -1899,13 +1901,12 @@
 						}
 					});
 				}
-				showRightArtifacts.set(false);
-				setTimeout(() => {
-					showRightArtifacts.set(true);
-				}, 200);
+				showRightArtifacts.set(true);
 			}
 		}
 	}
+
+	console.log({ $showRightArtifacts });
 </script>
 
 <svelte:head>
@@ -1975,7 +1976,7 @@
 			shareEnabled={!!history.currentId}
 			{initNewChat}
 		/>
-		{#if $rightHistory && !$showRightArtifacts}
+		{#if $rightHistory && $rightHistory.currentId && !$showRightArtifacts}
 			<button
 				on:click={() => showRightArtifacts.set(true)}
 				class="absolute right-0 top-1/2 transform -translate-y-1/2 z-50 rounded-full p-2 shadow-lg"
@@ -2173,10 +2174,12 @@
 					{/if}
 				</div>
 			</Pane>
-			{#if $showRightArtifacts && $isFinishGenRes}
+			{#if $rightHistory && $rightHistory.currentId && $showRightArtifacts}
 				<div id="RightArtifact">
 					<RightArtifact />
 				</div>
+			{:else}
+				<div class="hidden" />
 			{/if}
 			<ChatControls
 				bind:this={controlPaneComponent}

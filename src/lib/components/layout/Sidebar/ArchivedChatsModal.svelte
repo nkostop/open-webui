@@ -20,6 +20,7 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import UnarchiveAllConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import { showBottomArtifacts, showRightArtifacts } from '$lib/stores';
 	const i18n = getContext('i18n');
 
 	export let show = false;
@@ -42,6 +43,10 @@
 		const res = await deleteChatById(localStorage.token, chatId).catch((error) => {
 			toast.error(`${error}`);
 		});
+		if (res) {
+			showRightArtifacts.set(false);
+			showBottomArtifacts.set(false);
+		}
 
 		chats = await getArchivedChatList(localStorage.token);
 	};

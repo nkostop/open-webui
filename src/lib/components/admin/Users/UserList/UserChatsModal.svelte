@@ -12,6 +12,7 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import { showBottomArtifacts, showRightArtifacts } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -24,6 +25,10 @@
 		const res = await deleteChatById(localStorage.token, chatId).catch((error) => {
 			toast.error(`${error}`);
 		});
+		if (res) {
+			showRightArtifacts.set(false);
+			showBottomArtifacts.set(false);
+		}
 
 		chats = await getChatListByUserId(localStorage.token, user.id);
 	};
