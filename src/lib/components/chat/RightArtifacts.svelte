@@ -4,7 +4,7 @@
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
-	import { showLeftArtifacts, showSidebar, leftHistory } from '$lib/stores';
+	import { showRightArtifacts, showSidebar, rightHistory } from '$lib/stores';
 	import XMark from '../icons/XMark.svelte';
 	import { copyToClipboard, createMessagesList } from '$lib/utils';
 	import ArrowsPointingOut from '../icons/ArrowsPointingOut.svelte';
@@ -20,18 +20,23 @@
 	let selectedContentIdx = 0;
 
 	let copied = false;
-	4;
-	$: if ($leftHistory) {
-		messages = createMessagesList($leftHistory, $leftHistory.currentId);
+
+	onMount(() => {});
+
+	$: if ($rightHistory) {
+		messages = createMessagesList($rightHistory, $rightHistory.currentId);
 		getContents();
 	} else {
 		messages = [];
 		getContents();
 	}
 
+	console.log({ $rightHistory });
+
 	const getContents = () => {
 		contents = [];
 		messages.forEach((message) => {
+			console.log(6666, message?.content);
 			if (message?.role !== 'user' && message?.content) {
 				const codeBlockContents = message.content.match(/```[\s\S]*?```/g);
 				let codeBlocks = [];
@@ -115,10 +120,10 @@
 			}
 		});
 
-		if (contents.length === 0) {
-			showLeftArtifacts.set(false);
-			showLeftArtifacts.set(false);
-		}
+		// if (contents.length === 0) {
+		// 	showRightArtifacts.set(false);
+		// 	showRightArtifacts.set(false);
+		// }
 
 		selectedContentIdx = contents ? contents.length - 1 : 0;
 	};
@@ -141,35 +146,45 @@
 		}
 	};
 
+	function copyContent() {
+		if (contents[selectedContentIdx]?.content) {
+			copyToClipboard(contents[selectedContentIdx].content);
+			copied = true;
+			toast.success('Copied to clipboard');
+			setTimeout(() => {
+				copied = false;
+			}, 2000);
+		}
+	}
+
 	onMount(() => {
-		document.getElementById('#LeftArtifact')?.scrollIntoView({ behavior: 'smooth' });
+		// Update container lookup to use 'RightArtifact'
+		document.getElementById('RightArtifact')?.scrollIntoView({ behavior: 'smooth' });
 	});
 
 	// Inject event listeners to dynamically rendered HTML content
 	onMount(() => {
 		// After content is rendered, add event listeners
-		const leftArtifact = document.getElementById('LeftArtifact');
-		if (leftArtifact) {
-			const links = leftArtifact.querySelectorAll('a'); // Select all links inside LeftArtifact
+		const artifact = document.getElementById('RightArtifact');
+		if (artifact) {
+			const links = artifact.querySelectorAll('a');
 			links.forEach((link) => {
-				console.log({ links });
 				link.addEventListener('click', (e) => {
-					if ($leftHistory.messages[$leftHistory.currentId].done) {
-						submitHref(e); // Trigger the function when a link is clicked
+					if ($rightHistory.messages[$rightHistory.currentId].done) {
+						submitHref(e);
 					}
 				});
 			});
 		}
 	});
 	$: {
-		const leftArtifact = document.getElementById('LeftArtifact');
-		if (leftArtifact) {
-			const links = leftArtifact.querySelectorAll('a'); // Select all links inside LeftArtifact
+		const artifact = document.getElementById('RightArtifact');
+		if (artifact) {
+			const links = artifact.querySelectorAll('a');
 			links.forEach((link) => {
-				console.log({ links });
 				link.addEventListener('click', (e) => {
-					if ($leftHistory.messages[$leftHistory.currentId].done) {
-						submitHref(e); // Trigger the function when a link is clicked
+					if ($rightHistory.messages[$rightHistory.currentId].done) {
+						submitHref(e);
 					}
 				});
 			});
@@ -185,34 +200,50 @@
 	}
 </script>
 
+<!-- Update the container div -->
 <div
-	id="LeftArtifact"
-	class="absolute bg-gray-50 dark:bg-gray-850 flex flex-col rounded-lg shadow-lg"
-	style="bottom: 4px; left: {leftPx}; max-height: 100svh; max-width: 360px; overflow-y: auto; z-index: 20; padding: 6px;"
+	style="position: absolute; bottom: 4px; right: 4px; max-height: 100svh; max-width: 440px; width: 100%; overflow-y: auto; z-index: 20; padding: 12px; padding-bottom: 24px; color: #2f2f2f; background-color: var(--color-light, #cdcdcd); display: flex; flex-direction: column; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
 >
-	<div class="relative flex flex-col" style="">
+	<div class="relative flex flex-col">
 		<div class="w-full h-full flex-1 relative">
 			{#if overlay}
-				<div class="absolute top-0 left-0 right-0 left-0 z-10"></div>
+				<div class="absolute top-0 left-0 right-0 z-10"></div>
 			{/if}
 
-			<div class="absolute pointer-events-none z-50 w-full flex items-center justify-start p-4">
+			<div
+				class="pointer-events-none z-50 w-full flex items-center justify-end p-4"
+				style="position: fixed; top: 40px; right: 35px; z-index: 1000;"
+			>
 				<button
 					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
-					on:click={() => {
-						showLeftArtifacts.set(false);
-					}}
+					on:click={copyContent}
+					title="Copy to clipboard"
 				>
-					<ArrowLeft className="size-3.5 text-gray-900 dark:text-white" />
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.3"
+						stroke="#fff"
+						class="w-4 h-4"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"
+						/>
+					</svg>
 				</button>
 			</div>
-
-			<div class="absolute pointer-events-none z-50 w-full flex items-center justify-end p-4">
+			<div
+				class="pointer-events-none z-50 w-full flex items-center justify-end p-4"
+				style="position: fixed; top: 40px; right: 10px; z-index: 1000;"
+			>
 				<button
 					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
 					on:click={() => {
 						dispatch('close');
-						showLeftArtifacts.set(false);
+						showRightArtifacts.set(false);
 					}}
 				>
 					<XMark className="size-3.5 text-gray-900 dark:text-white" />
@@ -220,7 +251,7 @@
 			</div>
 
 			<div class="flex-1 w-full h-full">
-				<div class=" flex flex-col" style="height: 93svh; ">
+				<div class="flex flex-col" style="height: 93svh;">
 					{#if contents.length > 0}
 						<div
 							class="max-w-full w-full h-full"

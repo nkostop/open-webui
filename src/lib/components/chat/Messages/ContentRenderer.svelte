@@ -11,8 +11,8 @@
 		showControls,
 		showOverview,
 		showBottomArtifacts,
-		showLeftArtifacts,
-		leftHistory,
+		showRightArtifacts,
+		rightHistory,
 		bottomHistory,
 		isFinishGenRes
 	} from '$lib/stores';
@@ -131,13 +131,11 @@
 		let last_message = history.messages[history.currentId];
 		if (last_message && $isFinishGenRes) {
 			if (last_message && last_message.content.includes('OpenAllArtifacts')) {
-				showLeftArtifacts.set(true);
+				showRightArtifacts.set(true);
 				showBottomArtifacts.set(true);
 				showArtifacts.set(true);
 			} else if (last_message && last_message.content.includes('OpenBottomArtifacts')) {
 				showBottomArtifacts.set(true);
-			} else if (last_message && last_message.content.includes('OpenLeftArtifacts')) {
-				showLeftArtifacts.set(true);
 			} else if (last_message && last_message.content.includes('OpenArtifacts')) {
 				showControls.set(true);
 				showArtifacts.set(true);
@@ -153,7 +151,7 @@
 	// 			currentId: '',
 	// 			messages: {}
 	// 		});
-	// 		leftHistory.set({
+	// 		rightHistory.set({
 	// 			currentId: '',
 	// 			messages: {}
 	// 		});
@@ -228,25 +226,25 @@
 				}, 200);
 			}
 
-			// Case 2: Check if the message includes 'OpenLeftArtifacts'
-			else if (currentId && currentMessage.content.includes('OpenLeftArtifacts')) {
-				console.log('OpenLeftArtifacts only');
-				leftHistory.set({
-					currentId,
-					messages: {
-						...$leftHistory?.messages,
-						...Object.fromEntries(
-							Object.entries(history.messages).filter(([id, message]) =>
-								message.content.includes('OpenLeftArtifacts')
-							)
-						)
-					}
-				});
-				showLeftArtifacts.set(false);
-				setTimeout(() => {
-					showLeftArtifacts.set(true);
-				}, 200);
-			}
+			// // Case 2: Check if the message includes 'OpenLeftArtifacts'
+			// else if (currentId && currentMessage.content.includes('OpenLeftArtifacts')) {
+			// 	console.log('OpenLeftArtifacts only');
+			// 	rightHistory.set({
+			// 		currentId,
+			// 		messages: {
+			// 			...$rightHistory?.messages,
+			// 			...Object.fromEntries(
+			// 				Object.entries(history.messages).filter(([id, message]) =>
+			// 					message.content.includes('OpenLeftArtifacts')
+			// 				)
+			// 			)
+			// 		}
+			// 	});
+			// 	showRightArtifacts.set(false);
+			// 	setTimeout(() => {
+			// 		showRightArtifacts.set(true);
+			// 	}, 200);
+			// }
 
 			// Case 3: Check if the message includes 'OpenArtifacts'
 			else if (currentId && currentMessage.content.includes('OpenArtifacts')) {
@@ -280,8 +278,6 @@
 				currentMessage.done
 			) {
 				console.log('HTML, SVG, XML content');
-				showBottomArtifacts.set(false);
-				showLeftArtifacts.set(false);
 				showControls.set(true);
 				showArtifacts.set(true);
 			}

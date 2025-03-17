@@ -34,7 +34,6 @@
 		tags,
 		banners,
 		showSettings,
-		showLeftArtifacts,
 		showChangelog,
 		temporaryChatEnabled
 	} from '$lib/stores';

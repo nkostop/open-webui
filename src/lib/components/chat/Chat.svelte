@@ -36,9 +36,11 @@
 		chatTitle,
 		showArtifacts,
 		showBottomArtifacts,
-		showLeftArtifacts,
+		showRightArtifacts,
 		tools,
-		isFinishGenRes
+		isFinishGenRes,
+		bottomHistory,
+		rightHistory
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -89,7 +91,7 @@
 	import Spinner from '../common/Spinner.svelte';
 	import { getTools } from '$lib/apis/tools';
 	import BottomArtifacts from './BottomArtifacts.svelte';
-	import LeftArtifact from './LeftArtifact.svelte';
+	import RightArtifact from './RightArtifacts.svelte';
 
 	export let chatIdProp = '';
 
@@ -443,8 +445,6 @@
 				showCallOverlay.set(false);
 				showOverview.set(false);
 				showArtifacts.set(false);
-				showBottomArtifacts.set(false);
-				showLeftArtifacts.set(false);
 			}
 		});
 
@@ -700,8 +700,6 @@
 		await showCallOverlay.set(false);
 		await showOverview.set(false);
 		await showArtifacts.set(false);
-		await showBottomArtifacts.set(false);
-		await showLeftArtifacts.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
 			window.history.replaceState(history.state, '', `/`);
@@ -1863,6 +1861,51 @@
 			}
 		}
 	};
+
+	$: {
+		let last_message = history.messages[history.currentId];
+		if (last_message) {
+			if (last_message.content.includes('OpenBottomArtifacts')) {
+				if (history.currentId) {
+					bottomHistory.set({
+						currentId: history.currentId,
+						messages: {
+							...$bottomHistory?.messages,
+							...Object.fromEntries(
+								Object.entries(history.messages).filter(([, message]) =>
+									(message as { content: string }).content.includes('OpenBottomArtifacts')
+								)
+							)
+						}
+					});
+					showBottomArtifacts.set(false);
+					setTimeout(() => {
+						showBottomArtifacts.set(true);
+					}, 200);
+				}
+			}
+			if (last_message.content.includes('OpenRightArtifacts')) {
+				console.log(1111);
+				if (history.currentId) {
+					rightHistory.set({
+						currentId: history.currentId,
+						messages: {
+							...$rightHistory?.messages,
+							...Object.fromEntries(
+								Object.entries(history.messages).filter(([, message]) =>
+									(message as { content: string }).content.includes('OpenRightArtifacts')
+								)
+							)
+						}
+					});
+				}
+				showRightArtifacts.set(false);
+				setTimeout(() => {
+					showRightArtifacts.set(true);
+				}, 200);
+			}
+		}
+	}
 </script>
 
 <svelte:head>
@@ -1932,17 +1975,21 @@
 			shareEnabled={!!history.currentId}
 			{initNewChat}
 		/>
-
+		{#if $rightHistory && !$showRightArtifacts}
+			<button
+				on:click={() => showRightArtifacts.set(true)}
+				class="absolute right-0 top-1/2 transform -translate-y-1/2 z-50 rounded-full p-2 shadow-lg"
+				style="font-size: 22px"
+				aria-label="Show Right Artifacts"
+			>
+				&lt;
+			</button>
+		{/if}
 		<PaneGroup
 			direction="horizontal"
 			class="w-full h-full"
-			style={$showLeftArtifacts && $isFinishGenRes ? 'padding-left:30%' : ''}
+			style={$showRightArtifacts ? 'padding-right:440px' : ''}
 		>
-			{#if $showLeftArtifacts && $isFinishGenRes}
-				<div id="LeftArtifact">
-					<LeftArtifact />
-				</div>
-			{/if}
 			<Pane defaultSize={50} class="h-full flex w-full relative">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
@@ -2126,6 +2173,11 @@
 					{/if}
 				</div>
 			</Pane>
+			{#if $showRightArtifacts && $isFinishGenRes}
+				<div id="RightArtifact">
+					<RightArtifact />
+				</div>
+			{/if}
 			<ChatControls
 				bind:this={controlPaneComponent}
 				bind:history

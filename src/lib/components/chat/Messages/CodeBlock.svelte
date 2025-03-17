@@ -381,8 +381,6 @@
 	};
 
 	onMount(async () => {
-		console.log('codeblock', lang, code);
-
 		if (lang) {
 			dispatch('code', { lang, code });
 		}

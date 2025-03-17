@@ -4,7 +4,7 @@
 		showBottomArtifacts,
 		showControls,
 		showArtifacts,
-		showLeftArtifacts,
+		showRightArtifacts,
 		isFinishGenRes
 	} from '$lib/stores';
 
@@ -15,6 +15,7 @@
 	import HelpMenu from './Help/HelpMenu.svelte';
 
 	let showShortcuts = false;
+	console.log(111222, $showRightArtifacts);
 </script>
 
 <div class=" hidden lg:flex fixed bottom-0 right-0 px-1 py-1 z-20">
@@ -26,56 +27,40 @@
 		}}
 	/>
 	{#if $isFinishGenRes}
-		{#if !$showArtifacts && !$showBottomArtifacts && !$showLeftArtifacts}
-			<Tooltip content={$i18n.t('Artifacts')} placement="left">
+		{#if !$showBottomArtifacts && !$showRightArtifacts}
+			<Tooltip content={'BottomArtifacts'} placement="left">
 				<button
-					class="text-gray-600 dark:text-gray-300 bg-gray-300/20 size-5 flex items-center justify-center text-[0.7rem] rounded-full"
-					style="margin-right: 4px;"
+					class=" flex items-center justify-center text-[0.7rem] rounded-full"
+					style="margin-right: 4px; color:transparent; background-color:transparent;"
 					on:click={() => {
-						showLeftArtifacts.set(!$showLeftArtifacts);
-					}}
-				>
-					{'<'}
-				</button>
-			</Tooltip>
-		{/if}
-		{#if !$showBottomArtifacts && !$showArtifacts && !$showLeftArtifacts}
-			<Tooltip content={$i18n.t('Artifacts')} placement="left">
-				<button
-					class="text-gray-600 dark:text-gray-300 bg-gray-300/20 size-5 flex items-center justify-center text-[0.7rem] rounded-full"
-					style="margin-right: 4px;"
-					on:click={() => {
-						showBottomArtifacts.set(!$showBottomArtifacts);
+						showBottomArtifacts.set(true);
 					}}
 				>
 					{'^'}
 				</button>
 			</Tooltip>
 		{/if}
-		{#if !$showArtifacts && !$showBottomArtifacts && !$showLeftArtifacts}
-			<Tooltip content={$i18n.t('Artifacts')} placement="left">
+		{#if !$showBottomArtifacts && !$showRightArtifacts}
+			<Tooltip content={'RightArtifacts'} placement="left">
 				<button
-					class="text-gray-600 dark:text-gray-300 bg-gray-300/20 size-5 flex items-center justify-center text-[0.7rem] rounded-full"
-					style="margin-right: 4px;"
+					class=" flex items-center justify-center text-[0.7rem] rounded-full"
+					style="margin-right: 4px; color:transparent; background-color:transparent;"
 					on:click={() => {
-						showControls.set(!$showControls);
-						showArtifacts.set(!$showArtifacts);
+						showRightArtifacts.set(true);
 					}}
 				>
 					{'>'}
 				</button>
 			</Tooltip>
 		{/if}
-		{#if $showArtifacts || $showBottomArtifacts || $showLeftArtifacts || $showControls}
+		{#if $showBottomArtifacts || $showRightArtifacts}
 			<Tooltip content={$i18n.t('Close')} placement="left">
 				<button
 					class="text-gray-600 dark:text-gray-300 bg-gray-300/20 size-5 flex items-center justify-center text-[0.7rem] rounded-full"
 					style="margin-right: 4px;"
 					on:click={() => {
-						showControls.set(false);
-						showArtifacts.set(false);
 						showBottomArtifacts.set(false);
-						showLeftArtifacts.set(false);
+						showRightArtifacts.set(false);
 					}}
 				>
 					{'x'}

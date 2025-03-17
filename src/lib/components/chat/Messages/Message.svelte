@@ -5,8 +5,7 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import { settings, showLeftArtifacts } from '$lib/stores';
-	import { copyToClipboard } from '$lib/utils';
+	import { settings } from '$lib/stores';
 
 	import MultiResponseMessages from './MultiResponseMessages.svelte';
 	import ResponseMessage from './ResponseMessage.svelte';

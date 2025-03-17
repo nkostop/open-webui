@@ -333,7 +333,7 @@ const enrichBody = (body: object) => {
 	const userMessage = body?.messages?.find(
 		(message, index) =>
 			message.content.includes('OpenBottomArtifacts') ||
-			message.content.includes('OpenLeftArtifacts') ||
+			message.content.includes('OpenRightArtifacts') ||
 			message.content.includes('OpenArtifacts')
 	);
 

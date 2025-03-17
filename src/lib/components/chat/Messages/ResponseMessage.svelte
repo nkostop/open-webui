@@ -12,13 +12,7 @@
 	const dispatch = createEventDispatcher();
 
 	import { config, models, settings, temporaryChatEnabled, TTSWorker, user } from '$lib/stores';
-	import {
-		isFinishGenRes,
-		showBottomArtifacts,
-		showLeftArtifacts,
-		showArtifacts,
-		showControls
-	} from '$lib/stores';
+	import { isFinishGenRes } from '$lib/stores';
 	import { synthesizeOpenAISpeech } from '$lib/apis/audio';
 	import { imageGenerations } from '$lib/apis/images';
 	import {
@@ -221,12 +215,8 @@
 							)
 							?.at(0) ?? undefined;
 
-					console.log(voice);
-
 					const speak = new SpeechSynthesisUtterance(message.content);
 					speak.rate = $settings.audio?.tts?.playbackRate ?? 1;
-
-					console.log(speak);
 
 					speak.onend = () => {
 						speaking = false;
@@ -251,7 +241,6 @@
 			);
 
 			if (!messageContentParts.length) {
-				console.log('No content to speak');
 				toast.info($i18n.t('No content to speak'));
 
 				speaking = false;
@@ -375,7 +364,6 @@
 		const res = await imageGenerations(localStorage.token, message.content).catch((error) => {
 			toast.error(`${error}`);
 		});
-		console.log(res);
 
 		if (res) {
 			const files = res.map((image) => ({
@@ -396,7 +384,6 @@
 
 	const feedbackHandler = async (rating: number | null = null, details: object | null = null) => {
 		feedbackLoading = true;
-		console.log('Feedback', rating, details);
 
 		const updatedMessage = {
 			...message,
@@ -475,7 +462,6 @@
 			}
 		}
 
-		console.log(updatedMessage);
 		saveMessage(message.id, updatedMessage);
 
 		await tick();
@@ -491,7 +477,6 @@
 						return [];
 					}
 				);
-				console.log(tags);
 
 				if (tags) {
 					updatedMessage.annotation.tags = tags;
@@ -523,14 +508,9 @@
 	}
 
 	onMount(async () => {
-		// console.log('ResponseMessage mounted');
-
 		await tick();
 		if (buttonsContainerElement) {
-			console.log(buttonsContainerElement);
 			buttonsContainerElement.addEventListener('wheel', function (event) {
-				// console.log(event.deltaY);
-
 				event.preventDefault();
 				if (event.deltaY !== 0) {
 					// Adjust horizontal scroll position based on vertical scroll
@@ -555,7 +535,10 @@
 	});
 
 	let status_ai_msg = '';
-	$: if (message.content && message.content.includes('Thinking...')) {
+	$: if (
+		(message.content && message.content.includes('Thinking...')) ||
+		message.content.includes('request_analyze_agent')
+	) {
 		status_ai_msg = 'Thinking';
 	}
 
@@ -572,15 +555,7 @@
 			document.getElementById('end-of-messages')?.scrollIntoView({ behavior: 'smooth' });
 		}, 300);
 	} else {
-		console.log(33333, status_ai_msg, message.content);
 		isFinishGenRes.set(false);
-		// showBottomArtifacts.set(false);
-		// showLeftArtifacts.set(false);
-		// showArtifacts.set(false);
-		// showControls.set(false);
-		// setTimeout(() => {
-		// 	document.getElementById('end-of-messages')?.scrollIntoView({ behavior: 'smooth' });
-		// }, 1200);
 	}
 </script>
 
@@ -781,7 +756,7 @@
 							<div class="w-full flex flex-col relative" id="response-content-container">
 								{#if message.content === '' && !message.error}
 									<Skeleton />
-								{:else if message.content && (message.content.includes('Thinking...') || message.content.includes('Building...'))}
+								{:else if message.content && (message.content.includes('Thinking...') || message.content.includes('request_analyze_agent') || message.content.includes('Building...'))}
 									<details class="mt-2 rounded-md overflow-hidden">
 										<summary
 											class="cursor-pointer px-4 py-2 font-semibold border border-[#77F2A1] text-[#fff] rounded-md"
@@ -896,11 +871,8 @@
 										floatingButtons={message?.done}
 										save={!readOnly}
 										{model}
-										onTaskClick={async (e) => {
-											console.log(e);
-										}}
+										onTaskClick={async (e) => {}}
 										onSourceClick={async (id, idx) => {
-											console.log(id, idx);
 											let sourceButton = document.getElementById(`source-${message.id}-${idx}`);
 											const sourcesCollapsible = document.getElementById(`collapsible-sources`);
 
@@ -1246,9 +1218,7 @@
 											class=" {isLastMessage
 												? 'visible'
 												: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition whitespace-pre-wrap"
-											on:click={() => {
-												console.log(message);
-											}}
+											on:click={() => {}}
 											id="info-{message.id}"
 										>
 											<svg

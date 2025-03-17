@@ -14,7 +14,7 @@
 		showControls,
 		showArtifacts,
 		showBottomArtifacts,
-		showLeftArtifacts,
+		showRightArtifacts,
 		mobile,
 		temporaryChatEnabled
 	} from '$lib/stores';
@@ -155,7 +155,7 @@
 						await showOverview.set(false);
 						await showArtifacts.set(false);
 						await showBottomArtifacts.set(false);
-						await showLeftArtifacts.set(false);
+						await showRightArtifacts.set(false);
 					}}
 				>
 					<AdjustmentsHorizontal className=" size-4" strokeWidth="0.5" />

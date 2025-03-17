@@ -11,7 +11,7 @@
 		showOverview,
 		showArtifacts,
 		showBottomArtifacts,
-		showLeftArtifacts
+		showRightArtifacts
 	} from '$lib/stores';
 
 	import Modal from '../common/Modal.svelte';
@@ -132,8 +132,6 @@
 		showControls.set(false);
 		showOverview.set(false);
 		showArtifacts.set(false);
-		showBottomArtifacts.set(false);
-		showLeftArtifacts.set(false);
 
 		if ($showCallOverlay) {
 			showCallOverlay.set(false);
@@ -203,7 +201,7 @@
 	{:else}
 		<!-- if $showControls -->
 
-		{#if $showControls || $showLeftArtifacts}
+		{#if $showControls || $showRightArtifacts}
 			<PaneResizer class="relative flex w-2 items-center justify-center bg-background group">
 				<div class="z-10 flex h-7 w-5 items-center justify-center rounded-xs">
 					<EllipsisVertical className="size-4 invisible group-hover:visible" />
