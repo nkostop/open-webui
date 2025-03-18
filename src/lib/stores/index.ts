@@ -71,9 +71,9 @@ export const showControls = writable(false);
 export const showOverview = writable(false);
 export const showArtifacts = writable(false);
 export const showBottomArtifacts = writable(false);
-export const bottomHistory = writable<History | undefined>(undefined);
+export const bottomHistory = writable<string>('');
 export const showRightArtifacts = writable(false);
-export const rightHistory = writable<History | undefined>(undefined);
+export const rightHistory = writable<string>('');
 export const showCallOverlay = writable(false);
 export const isFinishGenRes = writable(false);
 

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { onMount, getContext, createEventDispatcher } from 'svelte';
+	import { onMount, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const i18n = getContext('i18n');
+	import { jsPDF } from 'jspdf';
 	const dispatch = createEventDispatcher();
 
 	import { showRightArtifacts, showSidebar, rightHistory } from '$lib/stores';
@@ -13,126 +14,23 @@
 	import ArrowLeft from '../icons/ArrowLeft.svelte';
 
 	export let overlay = false;
-	let messages = [];
 	let leftPx = '10px';
 
-	let contents: Array<{ type: string; content: string }> = [];
-	let selectedContentIdx = 0;
+	let contents = '';
+	let selectedContentIdx = '';
 
 	let copied = false;
 
-	onMount(() => {});
+	console.log(121212, { $rightHistory });
 
-	$: if ($rightHistory) {
-		messages = createMessagesList($rightHistory, $rightHistory.currentId);
-		getContents();
-	} else {
-		messages = [];
-		getContents();
-	}
+	onMount(() => {
+		contents = $rightHistory;
+	});
 
-	console.log({ $rightHistory });
-
-	const getContents = () => {
-		contents = [];
-		messages.forEach((message) => {
-			console.log(6666, message?.content);
-			if (message?.role !== 'user' && message?.content) {
-				const codeBlockContents = message.content.match(/```[\s\S]*?```/g);
-				let codeBlocks = [];
-
-				if (codeBlockContents) {
-					codeBlockContents.forEach((block) => {
-						const lang = block.split('\n')[0].replace('```', '').trim().toLowerCase();
-						const code = block.replace(/```[\s\S]*?\n/, '').replace(/```$/, '');
-						codeBlocks.push({ lang, code });
-					});
-				}
-
-				let htmlContent = '';
-				let cssContent = '';
-				let jsContent = '';
-
-				codeBlocks.forEach((block) => {
-					const { lang, code } = block;
-
-					if (lang === 'html') {
-						htmlContent += code + '\n';
-					} else if (lang === 'css') {
-						cssContent += code + '\n';
-					} else if (lang === 'javascript' || lang === 'js') {
-						jsContent += code + '\n';
-					}
-				});
-
-				const inlineHtml = message.content.match(/<html>[\s\S]*?<\/html>/gi);
-				const inlineCss = message.content.match(/<style>[\s\S]*?<\/style>/gi);
-				const inlineJs = message.content.match(/<script>[\s\S]*?<\/script>/gi);
-
-				if (inlineHtml) {
-					inlineHtml.forEach((block) => {
-						const content = block.replace(/<\/?html>/gi, ''); // Remove <html> tags
-						htmlContent += content + '\n';
-					});
-				}
-				if (inlineCss) {
-					inlineCss.forEach((block) => {
-						const content = block.replace(/<\/?style>/gi, ''); // Remove <style> tags
-						cssContent += content + '\n';
-					});
-				}
-				if (inlineJs) {
-					inlineJs.forEach((block) => {
-						const content = block.replace(/<\/?script>/gi, ''); // Remove <script> tags
-						jsContent += content + '\n';
-					});
-				}
-
-				if (htmlContent || cssContent || jsContent) {
-					const renderedContent = `
-                        <!DOCTYPE html>
-                        <html lang="en">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-							<${''}style>
-								${cssContent}
-							</${''}style>
-                        </head>
-                        <body>
-                            ${htmlContent}
-
-							<${''}script>
-                            	${jsContent}
-							</${''}script>
-                        </body>
-                        </html>
-                    `;
-					contents = [...contents, { type: 'web', content: renderedContent }];
-				} else {
-					// Check for SVG content
-					for (const block of codeBlocks) {
-						if (block.lang === 'svg' || (block.lang === 'xml' && block.code.includes('<svg'))) {
-							contents = [...contents, { type: 'svg', content: block.code }];
-						}
-					}
-				}
-			}
-		});
-
-		if (contents.length === 0) {
-			showRightArtifacts.set(false);
+	$: {
+		if (!$rightHistory) {
 			showRightArtifacts.set(false);
 		}
-
-		selectedContentIdx = contents ? contents.length - 1 : 0;
-	};
-
-	function navigateContent(direction: 'prev' | 'next') {
-		selectedContentIdx =
-			direction === 'prev'
-				? Math.max(selectedContentIdx - 1, 0)
-				: Math.min(selectedContentIdx + 1, contents.length - 1);
 	}
 
 	const submitHref = (e: Event) => {
@@ -147,8 +45,9 @@
 	};
 
 	function copyContent() {
-		if (contents[selectedContentIdx]?.content) {
-			copyToClipboard(contents[selectedContentIdx].content);
+		const renderedDiv = document.getElementById('rendered-outcome');
+		if (renderedDiv) {
+			copyToClipboard(renderedDiv.innerText);
 			copied = true;
 			toast.success('Copied to clipboard');
 			setTimeout(() => {
@@ -157,33 +56,29 @@
 		}
 	}
 
-	onMount(() => {
-		// Update container lookup to use 'RightArtifact'
-		document.getElementById('RightArtifact')?.scrollIntoView({ behavior: 'smooth' });
-	});
-
-	// Inject event listeners to dynamically rendered HTML content
-	onMount(() => {
-		// After content is rendered, add event listeners
-		const artifact = document.getElementById('RightArtifact');
-		if (artifact) {
-			const links = artifact.querySelectorAll('a');
-			links.forEach((link) => {
-				link.addEventListener('click', (e) => {
-					if ($rightHistory.messages[$rightHistory.currentId].done) {
-						submitHref(e);
-					}
-				});
+	function downloadPdf() {
+		const renderedDiv = document.getElementById('rendered-outcome');
+		if (renderedDiv) {
+			const doc = new jsPDF('p', 'pt', 'a4');
+			doc.html(renderedDiv, {
+				callback: function (doc) {
+					doc.save('NBG_ARTICLE.pdf');
+				},
+				x: 10,
+				y: 10
 			});
+		} else {
+			toast.error('No content available to export');
 		}
-	});
+	}
+
 	$: {
 		const artifact = document.getElementById('RightArtifact');
 		if (artifact) {
 			const links = artifact.querySelectorAll('a');
 			links.forEach((link) => {
 				link.addEventListener('click', (e) => {
-					if ($rightHistory.messages[$rightHistory.currentId].done) {
+					if ($rightHistory) {
 						submitHref(e);
 					}
 				});
@@ -198,6 +93,10 @@
 			leftPx = '4px';
 		}
 	}
+
+	onDestroy(() => {
+		showRightArtifacts.set(false);
+	});
 </script>
 
 <!-- Update the container div -->
@@ -212,7 +111,7 @@
 
 			<div
 				class="pointer-events-none z-50 w-full flex items-center justify-end p-4"
-				style="position: fixed; top: 40px; right: 35px; z-index: 1000;"
+				style="position: fixed; top: 40px; right: 5px; z-index: 1000;"
 			>
 				<button
 					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
@@ -234,19 +133,42 @@
 						/>
 					</svg>
 				</button>
-			</div>
-			<div
-				class="pointer-events-none z-50 w-full flex items-center justify-end p-4"
-				style="position: fixed; top: 40px; right: 10px; z-index: 1000;"
-			>
 				<button
-					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
+					class="self-center pointer-events-auto p-1 ml-2 rounded-full bg-white dark:bg-gray-850"
+					on:click={downloadPdf}
+					title="Download as PDF"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.3"
+						stroke="#fff"
+						class="w-4 h-4"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0 0l-4-4m4 4l4-4"
+						/>
+					</svg>
+				</button>
+				<button
+					class="self-center pointer-events-auto p-1 ml-2 rounded-full bg-white dark:bg-gray-850"
 					on:click={() => {
-						dispatch('close');
 						showRightArtifacts.set(false);
 					}}
 				>
-					<XMark className="size-3.5 text-gray-900 dark:text-white" />
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.3"
+						stroke="#fff"
+						class="w-4 h-4"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
 				</button>
 			</div>
 
@@ -254,6 +176,7 @@
 				<div class="flex flex-col" style="height: 93svh;">
 					{#if contents.length > 0}
 						<div
+							id="rendered-outcome"
 							class="max-w-full w-full h-full"
 							style="padding-top: 40px"
 							role="button"
@@ -267,14 +190,7 @@
 								}
 							}}
 						>
-							{#if contents[selectedContentIdx].type === 'web'}
-								{@html `${contents[selectedContentIdx].content}`}
-							{:else if contents[selectedContentIdx].type === 'svg'}
-								<SvgPanZoom
-									className="w-full h-full max-h-full overflow-hidden"
-									svg={contents[selectedContentIdx].content}
-								/>
-							{/if}
+							{@html `${$rightHistory}`}
 						</div>
 					{:else}
 						<div class="m-auto font-medium text-xs text-gray-900 dark:text-white">

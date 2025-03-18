@@ -1,8 +1,11 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
+import { rightHistory, showRightArtifacts } from '$lib/stores';
 import { getTimeRange } from '$lib/utils';
 
 export const createNewChat = async (token: string, chat: object) => {
 	let error = null;
+	showRightArtifacts.set(false);
+	rightHistory.set('');
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/new`, {
 		method: 'POST',

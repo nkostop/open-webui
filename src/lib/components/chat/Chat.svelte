@@ -1867,46 +1867,31 @@
 		}
 	};
 
-	$: {
-		let last_message = history.messages[history.currentId];
-		if (last_message) {
-			if (last_message.content.includes('OpenBottomArtifacts')) {
-				if (history.currentId) {
-					bottomHistory.set({
-						currentId: history.currentId,
-						messages: {
-							...$bottomHistory?.messages,
-							...Object.fromEntries(
-								Object.entries(history.messages).filter(([, message]) =>
-									(message as { content: string }).content.includes('OpenBottomArtifacts')
-								)
-							)
-						}
-					});
-					showBottomArtifacts.set(true);
+	$: if (history.messages) {
+		console.log(33333, history.messages);
+		Object.values(history.messages).forEach((message) => {
+			let content = message.content;
+			if (message && content) {
+				if (content.includes('OpenRightArtifacts')) {
+					console.log(22222, content);
+					const new_message = content?.split('OpenRightArtifacts')[1];
+					rightHistory.set(new_message);
 				}
 			}
-			if (last_message.content.includes('OpenRightArtifacts')) {
-				console.log(1111);
-				if (history.currentId) {
-					rightHistory.set({
-						currentId: history.currentId,
-						messages: {
-							...$rightHistory?.messages,
-							...Object.fromEntries(
-								Object.entries(history.messages).filter(([, message]) =>
-									(message as { content: string }).content.includes('OpenRightArtifacts')
-								)
-							)
-						}
-					});
-				}
-				showRightArtifacts.set(true);
+		});
+		console.log({ $rightHistory, $showRightArtifacts });
+
+		Object.values(history.messages).forEach((message) => {
+			if (message?.content && message?.content?.includes('OpenBottomArtifacts')) {
+				const new_message = message?.content?.split('OpenBottomArtifacts')[1];
+				bottomHistory.set(new_message);
 			}
-		}
+		});
 	}
 
-	console.log({ $showRightArtifacts });
+	$: if ($rightHistory) {
+		showRightArtifacts.set(true);
+	}
 </script>
 
 <svelte:head>
@@ -1976,7 +1961,7 @@
 			shareEnabled={!!history.currentId}
 			{initNewChat}
 		/>
-		{#if $rightHistory && $rightHistory.currentId && !$showRightArtifacts}
+		{#if $rightHistory && !$showRightArtifacts}
 			<button
 				on:click={() => showRightArtifacts.set(true)}
 				class="absolute right-0 top-1/2 transform -translate-y-1/2 z-50 rounded-full p-2 shadow-lg"
@@ -1989,7 +1974,7 @@
 		<PaneGroup
 			direction="horizontal"
 			class="w-full h-full"
-			style={$showRightArtifacts ? 'padding-right:440px' : ''}
+			style={$showRightArtifacts ? 'padding-right: 440px' : ''}
 		>
 			<Pane defaultSize={50} class="h-full flex w-full relative">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
@@ -2174,7 +2159,7 @@
 					{/if}
 				</div>
 			</Pane>
-			{#if $rightHistory && $rightHistory.currentId && $showRightArtifacts}
+			{#if $rightHistory && $showRightArtifacts}
 				<div id="RightArtifact">
 					<RightArtifact />
 				</div>
