@@ -880,6 +880,7 @@ Name: .nbg__button Description: Base class for all buttons, defining common padd
 	font-family: 'Fira Code', monospace;
 	font-weight: regular;
 	font-size: 12px;
+	padding: 6px;
 }
 
 /*

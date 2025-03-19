@@ -403,6 +403,7 @@
 			chatIdUnsubscriber = chatId.subscribe(async (value) => {
 				if (!value) {
 					await initNewChat();
+					showRightArtifacts.set(false);
 				}
 			});
 		} else {
@@ -1868,29 +1869,43 @@
 	};
 
 	$: if (history.messages) {
-		console.log(33333, history.messages);
 		Object.values(history.messages).forEach((message) => {
 			let content = message.content;
 			if (message && content) {
 				if (content.includes('OpenRightArtifacts')) {
-					console.log(22222, content);
 					const new_message = content?.split('OpenRightArtifacts')[1];
 					rightHistory.set(new_message);
+					showRightArtifacts.set(true);
+					console.log(2222);
 				}
-			}
-		});
-		console.log({ $rightHistory, $showRightArtifacts });
-
-		Object.values(history.messages).forEach((message) => {
-			if (message?.content && message?.content?.includes('OpenBottomArtifacts')) {
-				const new_message = message?.content?.split('OpenBottomArtifacts')[1];
-				bottomHistory.set(new_message);
 			}
 		});
 	}
 
-	$: if ($rightHistory) {
-		showRightArtifacts.set(true);
+	let rightPaneSize = 300; // initial width in pixels
+	let isDragging = false;
+	let startX = 0;
+	let startWidth = rightPaneSize;
+
+	function handlePointerDown(e: PointerEvent) {
+		isDragging = true;
+		startX = e.clientX;
+		startWidth = rightPaneSize;
+		window.addEventListener('pointermove', handlePointerMove);
+		window.addEventListener('pointerup', handlePointerUp);
+	}
+
+	function handlePointerMove(e: PointerEvent) {
+		if (!isDragging) return;
+		const dx = startX - e.clientX;
+		// Ensure a minimum width (e.g. 200px)
+		rightPaneSize = Math.max(200, startWidth + dx);
+	}
+
+	function handlePointerUp() {
+		isDragging = false;
+		window.removeEventListener('pointermove', handlePointerMove);
+		window.removeEventListener('pointerup', handlePointerUp);
 	}
 </script>
 
@@ -1971,11 +1986,7 @@
 				&lt;
 			</button>
 		{/if}
-		<PaneGroup
-			direction="horizontal"
-			class="w-full h-full"
-			style={$showRightArtifacts ? 'padding-right: 440px' : ''}
-		>
+		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex w-full relative">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
@@ -2160,11 +2171,15 @@
 				</div>
 			</Pane>
 			{#if $rightHistory && $showRightArtifacts}
-				<div id="RightArtifact">
+				<div
+					on:pointerdown={handlePointerDown}
+					style="width: 10px; cursor: ew-resize; background: rgba(0, 0, 0, 0.1);"
+				></div>
+
+				<!-- Right panel pane with custom width -->
+				<div class="h-full" style="width: {rightPaneSize}px; min-width: 300px; overflow-y: auto;">
 					<RightArtifact />
 				</div>
-			{:else}
-				<div class="hidden" />
 			{/if}
 			<ChatControls
 				bind:this={controlPaneComponent}

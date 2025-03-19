@@ -101,17 +101,18 @@
 
 <!-- Update the container div -->
 <div
-	style="position: absolute; bottom: 4px; right: 4px; max-height: 100svh; max-width: 440px; width: 100%; overflow-y: auto; z-index: 20; padding: 12px; padding-bottom: 24px; color: #2f2f2f; background-color: var(--color-light, #cdcdcd); display: flex; flex-direction: column; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
+	style="width: 100%; height: 100%; overflow-y: auto; z-index: 20; padding: 12px; padding-bottom: 24px; color: #2f2f2f; background-color: var(--color-light, #cdcdcd); display: flex; flex-direction: column; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
 >
-	<div class="relative flex flex-col">
+	<div class="relative flex flex-col" style="height: 100%;">
 		<div class="w-full h-full flex-1 relative">
 			{#if overlay}
-				<div class="absolute top-0 left-0 right-0 z-10"></div>
+				<div class="absolute top-0 left-0 right-0"></div>
 			{/if}
 
+			<!-- Changed from fixed positioning to relative positioning -->
 			<div
 				class="pointer-events-none z-50 w-full flex items-center justify-end p-4"
-				style="position: fixed; top: 40px; right: 5px; z-index: 1000;"
+				style="position: fixed; top: 40px; right: 5px;"
 			>
 				<button
 					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
@@ -173,7 +174,7 @@
 			</div>
 
 			<div class="flex-1 w-full h-full">
-				<div class="flex flex-col" style="height: 93svh;">
+				<div class="flex flex-col" style="height: 100%;">
 					{#if contents.length > 0}
 						<div
 							id="rendered-outcome"
@@ -190,11 +191,11 @@
 								}
 							}}
 						>
-							{@html `${$rightHistory}`}
+							{@html $rightHistory}
 						</div>
 					{:else}
 						<div class="m-auto font-medium text-xs text-gray-900 dark:text-white">
-							{$i18n.t('No HTML, CSS, or JavaScript content found.')}
+							{$i18n.t('No content found.')}
 						</div>
 					{/if}
 				</div>
