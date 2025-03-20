@@ -402,6 +402,9 @@
 					{/if}
 
 					{#each messages as message, messageIdx (message.id)}
+						{#if messages.length - 1 === messageIdx}
+							<div id="start-of-messages" />
+						{/if}
 						<Message
 							{chatId}
 							bind:history

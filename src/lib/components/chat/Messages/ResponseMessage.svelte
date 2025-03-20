@@ -415,9 +415,9 @@
 	$: {
 		if (message.done) {
 			isFinishGenRes.set(true);
-			// setTimeout(() => {
-			// 	document.getElementById('end-of-messages')?.scrollIntoView({ behavior: 'smooth' });
-			// }, 300);
+			setTimeout(() => {
+				document.getElementById('start-of-messages')?.scrollIntoView({ behavior: 'smooth' });
+			}, 300);
 		} else {
 			isFinishGenRes.set(false);
 		}
