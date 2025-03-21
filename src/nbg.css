@@ -746,7 +746,7 @@ Name: .nbg__step__card Description: Basic styling for the step card, with paddin
 /* Text Link Buttons */
 .nbg__button__text__link {
 	background-color: transparent;
-	color: #4cd1b0;
+	color: #1e85ff;
 	border: none;
 	text-decoration: underline;
 }
