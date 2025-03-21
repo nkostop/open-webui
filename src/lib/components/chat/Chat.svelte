@@ -1882,7 +1882,7 @@
 		});
 	}
 
-	let rightPaneSize = 300; // initial width in pixels
+	let rightPaneSize = 600; // initial width in pixels
 	let isDragging = false;
 	let startX = 0;
 	let startWidth = rightPaneSize;
