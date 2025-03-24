@@ -814,7 +814,11 @@
 								{/if}
 								{#if message.content.includes('Assistant_Response:')}
 									{@const messageContent = sanitizedMessage(
-										message.content.split('Assistant_Response:')[1].split('OpenRightArtifacts')[0]
+										message.content.includes('OpenRightArtifacts')
+											? message.content
+													.split('Assistant_Response:')[1]
+													.split('OpenRightArtifacts')[0]
+											: message.content.split('Assistant_Response:')[1]
 									)}
 									<ContentRenderer
 										id={message.id}
