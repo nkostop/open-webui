@@ -1868,7 +1868,9 @@
 		}
 	};
 
-	$: if (history.messages) {
+	let articleOpened = false;
+
+	$: if (history.messages && !articleOpened) {
 		Object.values(history.messages).forEach((message) => {
 			let content = message.content;
 			if (message && content) {
@@ -1876,7 +1878,7 @@
 					const new_message = content?.split('OpenRightArtifacts')[1];
 					rightHistory.set(new_message);
 					showRightArtifacts.set(true);
-					console.log(2222);
+					articleOpened = true;
 				}
 			}
 		});
