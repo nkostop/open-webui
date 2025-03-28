@@ -191,7 +191,7 @@
 								}
 							}}
 						>
-							{@html $rightHistory}
+							{@html $rightHistory.split('Assistant_Response:')[0]}
 						</div>
 					{:else}
 						<div class="m-auto font-medium text-xs text-gray-900 dark:text-white">
