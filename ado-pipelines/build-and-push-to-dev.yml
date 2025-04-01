@@ -5,15 +5,15 @@ parameters:
 - name: imageRepository
   displayName: imageRepository - the image repository you want to create (example. bd/pothenesxes)
   type: string
-# - name: project
-#   displayName: project - the project the repo is located at
-#   type: string
+- name: project
+  displayName: project - the project the repo is located at
+  type: string
 - name: repo
   displayName: repo - the repo the file is located at
   type: string
-# - name: branch
-#   displayName: branch - the branch of the repo that the file is located at
-#   type: string
+- name: branch
+  displayName: branch - the branch of the repo that the file is located at
+  type: string
 # - name: changeImageOnWebapp
 #   displayName: changeImageOnWebapp - use true to also update the image on the webapp
 #   type: boolean
