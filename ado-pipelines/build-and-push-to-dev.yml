@@ -1,0 +1,288 @@
+parameters:
+- name: dockerFile
+  displayName: dockerFile - the path to the Dockerfile (from the root of the project repo)
+  type: string
+- name: imageRepository
+  displayName: imageRepository - the image repository you want to create (example. bd/pothenesxes)
+  type: string
+# - name: project
+#   displayName: project - the project the repo is located at
+#   type: string
+# - name: repo
+#   displayName: repo - the repo the file is located at
+#   type: string
+# - name: branch
+#   displayName: branch - the branch of the repo that the file is located at
+#   type: string
+# - name: changeImageOnWebapp
+#   displayName: changeImageOnWebapp - use true to also update the image on the webapp
+#   type: boolean
+# - name: performSmokeTest
+#   displayName: performSmokeTest - use true if you already chose to change image to also perform a smoke test on the webapp
+#   type: boolean
+- name: devContainerRegistry
+  displayName: devContainerRegistry - the container registry to push the image in dev
+  type: string
+# - name: qaContainerRegistry
+#   displayName: qaContainerRegistry - the container registry to push the image in qa and set the webapp
+#   type: string
+# - name: appName
+#   displayName: Name of the Web App
+#   type: string
+# - name: resourceGroupName
+#   displayName: resourceGroupName - the resource group where the application is located at
+#   type: string
+# - name: subscriptionName
+#   displayName: subscriptionName - the subscription where the application is located at
+#   type: string
+# - name: environment
+#   displayName: Environment - the environment the application is located at
+#   type: string
+- name: devServiceConnection
+  displayName: devServiceConnection - the name of the service connection used in dev
+  type: string
+# - name: qaServiceConnection
+#   displayName: qaServiceConnection - the name of the service connection used in qa
+#   type: string
+# - name: agentPool
+#   displayName: agent - the pool name that the build-and-push will run from 
+#   type: string
+- name: versionUpgrade
+  displayName: versionUpgrade - the version to be upgraded ( major/minor/patch )
+  type: string
+  default: 'patch'
+  values:
+  - major
+  - minor
+  - patch 
+
+trigger: none
+
+jobs:
+- job: buildAndPushImage
+  displayName: BUILD AND PUSH IMAGE
+  workspace:
+    clean: all
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - checkout: self
+      clean: true
+    - checkout: git://${{ parameters.project }}/${{ parameters.repo }}
+    - checkout: git://DevOps_Private/DevOpsPipelineHelper
+
+    - task: NuGetAuthenticate@1
+      displayName: NuGet authenticate
+
+    - task: MavenAuthenticate@0
+      displayName: Maven authenticate
+    
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd $(Build.SourcesDirectory)/${{ parameters.repo }}
+          git checkout ${{ parameters.branch }}
+          ls -al
+
+    - task: AzureCLI@2
+      name: getImageRepositoryTags
+      displayName: GET IMAGE REPOSITORY TAGS FROM DEV REGISTRY
+      inputs:
+        azureSubscription: ${{ parameters.devServiceConnection }}
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          devContainerRegistry="${{ parameters.devContainerRegistry }}"
+          imageRepository="${{ parameters.imageRepository }}"
+          versionUpgrade="${{ parameters.versionUpgrade }}"
+
+          # Check for existing tags in ACR 
+          echo "Checking for existing tags in ACR..."
+
+          az acr login --name $devContainerRegistry --subscription nbg-IDP-DevEnvMultiple-dev-01
+          existingTags=$(az acr repository show-tags --name $devContainerRegistry --repository $imageRepository --output tsv)
+
+          # Filter tags by format
+          valid_tags=()
+          for tag in $existingTags; do
+            if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Valid tag found: $tag"
+              valid_tags+=($tag)
+            fi
+          done
+          
+          if [ ${#valid_tags[@]} -eq 0 ]; then
+            # No valid tags found, default to 1.0.0
+            newTag="1.0.0"
+            echo "No valid tags in major.minor.patch format found. Defaulting to $newTag"
+          else
+            # Sort valid tags and find the latest version
+            latestTag=$(printf "%s\n" "${valid_tags[@]}" | sort -V | tail -n 1)
+            latestMajor=$(echo $latestTag | cut -d '.' -f 1)
+            latestMinor=$(echo $latestTag | cut -d '.' -f 2)
+            latestPatch=$(echo $latestTag | cut -d '.' -f 3)
+
+            # Increment version based on the selected upgrade type
+            if [ "$versionUpgrade" == "major" ]; then
+              newMajor=$((latestMajor + 1))
+              newMinor=0
+              newPatch=0
+            elif [ "versionUpgrade" == "minor" ]; then
+              newMajor=$latestMajor
+              newMinor=$((latestMinor + 1))
+              newPatch=0
+            else
+              newMajor=$latestMajor
+              newMinor=$latestMinor
+              newPatch=$((latestPatch + 1))
+            fi
+
+            newTag="${newMajor}.${newMinor}.${newPatch}"
+            echo "Incremented tag based on latest valid version: $newTag"
+          fi
+
+          echo "New tag: $newTag"
+          
+          echo "##vso[task.setvariable variable=imageRepository]$imageRepository"
+          echo "##vso[task.setvariable variable=newTag;isoutput=true]$newTag"
+
+    - task: Docker@2
+      name: buildDockerImage
+      displayName: BUILD DOCKER IMAGE WITH TAGS
+      inputs:
+        command: build
+        dockerfile: ${{ parameters.repo }}/${{ parameters.dockerFile }}
+        repository: $(imageRepository)
+        arguments: '--build-arg PAT=$(System.AccessToken)'
+        tags: |
+          $(getImageRepositoryTags.newTag)
+          latest
+        buildContext: $(Build.SourcesDirectory)/${{ parameters.repo }}
+
+    - task: AzureCLI@2
+      name: pushImageToDevAcr
+      displayName: PUSH IMAGE TO DEV ACR
+      inputs:
+        azureSubscription: ${{ parameters.devServiceConnection }}
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          devContainerRegistry="${{ parameters.devContainerRegistry }}"
+
+          docker image ls
+          az acr login --name $devContainerRegistry --subscription nbg-IDP-DevEnvMultiple-dev-01
+          docker tag $(imageRepository):$(getImageRepositoryTags.newTag) $devContainerRegistry.azurecr.io/$(imageRepository):$(getImageRepositoryTags.newTag)
+          docker tag $(imageRepository):latest $devContainerRegistry.azurecr.io/$(imageRepository):latest
+          docker image ls
+          docker push $devContainerRegistry.azurecr.io/$(imageRepository):$(getImageRepositoryTags.newTag)
+          docker push $devContainerRegistry.azurecr.io/$(imageRepository):latest
+
+          echo "New tag: $(getImageRepositoryTags.newTag)"
+
+# - job: pushImageToQA
+#   displayName: PUSH IMAGE TO QA
+#   dependsOn: buildAndPushImage
+#   pool: 
+#     name: ${{ parameters.agentPool }}
+#   variables:
+#     newTag: $[ dependencies.buildAndPushImage.outputs['getImageRepositoryTags.newTag'] ]
+#   steps:
+#   - task: Bash@3
+#     inputs:
+#       targetType: 'inline'
+#       script: |
+#         imageRepository="${{ parameters.imageRepository }}"
+#         echo $imageRepository
+#         echo $(newTag)
+
+#         echo "[=] Image Repository: $imageRepository"
+#         echo "[=] Tag: $(newTag)"
+
+#         # Set the pipeline variables
+#         echo "##vso[task.setvariable variable=imageRepository;]$imageRepository"
+#         echo "##vso[task.setvariable variable=newTag;]$(newTag)" 
+
+#   - task: AzureCLI@2
+#     displayName: PULL IMAGE FROM DEV ACR
+#     inputs:
+#       azureSubscription: $(devServiceConnection)
+#       scriptType: 'bash'
+#       scriptLocation: 'inlineScript'
+#       inlineScript: |
+#         devContainerRegistry="${{ parameters.devContainerRegistry }}"
+
+#         docker image ls
+#         az acr login --name $devContainerRegistry
+#         docker pull $devContainerRegistry.azurecr.io/$(imageRepository):$(newTag)
+#         docker pull $devContainerRegistry.azurecr.io/$(imageRepository):latest
+  
+#   - task: AzureCLI@2
+#     displayName: TAG THE IMAGE CORRECTLY
+#     inputs:
+#       azureSubscription: $(devServiceConnection)
+#       scriptType: 'bash'
+#       scriptLocation: 'inlineScript'
+#       inlineScript: |
+#         devContainerRegistry="${{ parameters.devContainerRegistry }}"
+#         qaContainerRegistry="${{ parameters.qaContainerRegistry }}"
+
+#         docker image ls
+#         docker tag $devContainerRegistry.azurecr.io/$(imageRepository):$(newTag) $qaContainerRegistry.azurecr.io/$(imageRepository):$(newTag)
+#         docker tag $devContainerRegistry.azurecr.io/$(imageRepository):latest $qaContainerRegistry.azurecr.io/$(imageRepository):latest
+#         docker image ls
+        
+#   - task: AzureCLI@2
+#     displayName: PUSH IMAGE TO QA ACR
+#     inputs:
+#       azureSubscription: ${{ parameters.qaServiceConnection }}
+#       scriptType: 'bash'
+#       scriptLocation: 'inlineScript'
+#       inlineScript: |
+#         qaContainerRegistry="${{ parameters.qaContainerRegistry }}"
+#         subscriptionName="${{ parameters.subscriptionName }}"
+
+#         docker image ls
+#         az acr login --name $qaContainerRegistry --subscription $subscriptionName
+#         docker push $qaContainerRegistry.azurecr.io/$(imageRepository):$(newTag)
+#         docker push $qaContainerRegistry.azurecr.io/$(imageRepository):latest
+#         echo "Cleaning docker images"
+#         docker image prune -a -f
+
+    # - ${{ if eq(parameters.changeImageOnWebapp, 'true') }}:
+    #   - task: AzureCLI@2
+    #     displayName: CHANGE IMAGE ON APPSERVICE
+    #     inputs:
+    #       azureSubscription: ${{ parameters.qaServiceConnection }}
+    #       scriptType: 'bash'
+    #       scriptLocation: 'inlinescript'
+    #       inlineScript: |
+    #         az webapp config container set --name ${{ parameters.appName }} --resource-group ${{ parameters.resourceGroupName }} \
+    #         --container-image-name ${{ parameters.qaContainerRegistry }}/${{ parameters.imageRepositoryAndTag }} \
+    #         --container-registry-url https://${{ parameters.qaContainerRegistry }}.azurecr.io
+            
+    # - ${{ if and(eq(parameters.changeImageOnWebapp, true), eq(parameters.performSmokeTest, 'true')) }}:
+    #   - task: Bash@3
+    #     displayName: PERFORM HEALTH CHECK ON APPSERVICE AFTER IMAGE CHANGE
+    #     inputs:
+    #       targetType: 'inline'
+    #       script: |
+    #         sleep 30
+    #         attempt=0
+    #         url="https://${{ parameters.appName }}.azurewebsites.net"
+
+    #         while [ $attempt -lt 5 ]; do
+    #           response=$(curl -s -o /dev/null -w "%{http_code}" $url)
+
+    #           if [ "$response" -eq 200 ]; then
+    #             echo "Health check passed with response code $response"
+    #             exit 0
+    #           else
+    #             echo "Health check failed with response code $response (attempt $((attempt+1))/5)"
+    #             attempt=$((attempt + 1))
+    #             sleep 10
+    #           fi
+    #         done
+            
+    #         echo "Health check failed after 5 attempts"
+    #         exit 1
