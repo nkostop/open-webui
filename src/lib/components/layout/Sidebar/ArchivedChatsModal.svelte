@@ -20,7 +20,12 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import UnarchiveAllConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import { showBottomArtifacts, showRightArtifacts } from '$lib/stores';
+	import {
+		rightHistory,
+		bottomHistory,
+		showBottomArtifacts,
+		showRightArtifacts
+	} from '$lib/stores';
 	const i18n = getContext('i18n');
 
 	export let show = false;
@@ -46,6 +51,8 @@
 		if (res) {
 			showRightArtifacts.set(false);
 			showBottomArtifacts.set(false);
+			rightHistory.set('');
+			bottomHistory.set('');
 		}
 
 		chats = await getArchivedChatList(localStorage.token);

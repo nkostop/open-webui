@@ -1871,7 +1871,7 @@
 	let windowSize = window.innerWidth;
 	console.log({ windowSize, ha: history.messages[history.currentId]?.done });
 
-	$: if (history.messages && windowSize > 768 && $isFinishGenRes) {
+	$: if (history.messages && windowSize > 768 && $isFinishGenRes && $chatId) {
 		let last_message = history.messages[history.currentId];
 
 		if (last_message) {
@@ -1884,7 +1884,7 @@
 		}
 	}
 
-	$: if (history.messages && windowSize <= 768 && $isFinishGenRes) {
+	$: if (history.messages && windowSize <= 768 && $isFinishGenRes && $chatId) {
 		let last_message = history.messages[history.currentId];
 
 		if (last_message) {
@@ -1895,6 +1895,11 @@
 				showRightArtifacts.set(true);
 			}
 		}
+	}
+
+	$: if (!$rightHistory && $showRightArtifacts) {
+		rightHistory.set('');
+		showRightArtifacts.set(false);
 	}
 
 	let rightPaneSize = 600; // initial width in pixels

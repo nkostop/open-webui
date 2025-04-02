@@ -120,13 +120,12 @@
 		if (res) {
 			showRightArtifacts.set(false);
 			showBottomArtifacts.set(false);
-			rightHistory.set({ messages: [], currentId: '' });
-			bottomHistory.set({ messages: [], currentId: '' });
+			rightHistory.set('');
+			bottomHistory.set('');
 
 			tags.set(await getAllTags(localStorage.token));
 			if ($chatId === id) {
 				await goto('/');
-
 				await chatId.set('');
 				await tick();
 			}

@@ -21,8 +21,6 @@
 
 	let copied = false;
 
-	console.log(121212, { $rightHistory });
-
 	onMount(() => {
 		contents = $rightHistory;
 	});
@@ -175,7 +173,7 @@
 
 			<div class="flex-1 w-full h-full">
 				<div class="flex flex-col" style="height: 100%;">
-					{#if contents.length > 0}
+					{#if contents.length > 0 && $rightHistory}
 						<div
 							id="rendered-outcome"
 							class="max-w-full w-full h-full"
@@ -191,7 +189,7 @@
 								}
 							}}
 						>
-							{@html $rightHistory.split('Assistant_Response:')[0]}
+							{@html $rightHistory?.split('Assistant_Response:')[0]}
 						</div>
 					{:else}
 						<div class="m-auto font-medium text-xs text-gray-900 dark:text-white">

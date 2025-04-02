@@ -12,7 +12,12 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
-	import { showBottomArtifacts, showRightArtifacts } from '$lib/stores';
+	import {
+		bottomHistory,
+		rightHistory,
+		showBottomArtifacts,
+		showRightArtifacts
+	} from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -28,6 +33,8 @@
 		if (res) {
 			showRightArtifacts.set(false);
 			showBottomArtifacts.set(false);
+			rightHistory.set('');
+			bottomHistory.set('');
 		}
 
 		chats = await getChatListByUserId(localStorage.token, user.id);
