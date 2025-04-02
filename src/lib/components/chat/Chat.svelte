@@ -1868,17 +1868,33 @@
 		}
 	};
 
-	$: if (history.messages) {
-		Object.values(history.messages).forEach((message) => {
-			let content = message.content;
-			if (message && content) {
-				if (content.includes('OpenRightArtifacts')) {
-					const new_message = content?.split('OpenRightArtifacts')[1];
-					rightHistory.set(new_message);
-					showRightArtifacts.set(true);
-				}
+	let windowSize = window.innerWidth;
+	console.log({ windowSize, ha: history.messages[history.currentId]?.done });
+
+	$: if (history.messages && windowSize > 768 && $isFinishGenRes) {
+		let last_message = history.messages[history.currentId];
+
+		if (last_message) {
+			let content = last_message.content;
+			if (content.includes('OpenRightArtifacts')) {
+				const new_message = content?.split('OpenRightArtifacts')[1];
+				rightHistory.set(new_message);
+				showRightArtifacts.set(true);
 			}
-		});
+		}
+	}
+
+	$: if (history.messages && windowSize <= 768 && $isFinishGenRes) {
+		let last_message = history.messages[history.currentId];
+
+		if (last_message) {
+			let content = last_message.content;
+			if (content.includes('OpenRightArtifacts')) {
+				const new_message = content?.split('OpenRightArtifacts')[1];
+				rightHistory.set(new_message);
+				showRightArtifacts.set(true);
+			}
+		}
 	}
 
 	let rightPaneSize = 600; // initial width in pixels
@@ -2069,8 +2085,8 @@
 							</div>
 						</div>
 						<div
-							class="flex flex-col justify-start pb-[1rem]"
-							style={$showBottomArtifacts && $isFinishGenRes ? 'height: 65%;' : 'auto'}
+							class="flex flex-col justify-start"
+							style={$showBottomArtifacts && $isFinishGenRes ? 'height: 65%;' : ''}
 						>
 							<MessageInput
 								{history}
