@@ -1868,12 +1868,8 @@
 		}
 	};
 
-	let windowSize = window.innerWidth;
-	console.log({ windowSize, ha: history.messages[history.currentId]?.done });
-
-	$: if (history.messages && windowSize > 768 && $isFinishGenRes && $chatId) {
+	$: if (history.messages && $isFinishGenRes && $chatId) {
 		let last_message = history.messages[history.currentId];
-
 		if (last_message) {
 			let content = last_message.content;
 			if (content.includes('OpenRightArtifacts')) {
@@ -1881,18 +1877,17 @@
 				rightHistory.set(new_message);
 				showRightArtifacts.set(true);
 			}
-		}
-	}
-
-	$: if (history.messages && windowSize <= 768 && $isFinishGenRes && $chatId) {
-		let last_message = history.messages[history.currentId];
-
-		if (last_message) {
-			let content = last_message.content;
-			if (content.includes('OpenRightArtifacts')) {
-				const new_message = content?.split('OpenRightArtifacts')[1];
-				rightHistory.set(new_message);
-				showRightArtifacts.set(true);
+			if (content.includes('OpenBottomArtifactsStart')) {
+				console.log(90909090);
+				const new_message = content
+					?.split('OpenBottomArtifactsStart')[1]
+					?.split('OpenBottomArtifactsEnd')[0];
+				bottomHistory.set(new_message);
+				showBottomArtifacts.set(true);
+			}
+			if (content.includes('The process is finished. I will be happy to assist you again.')) {
+				bottomHistory.set('');
+				showBottomArtifacts.set(false);
 			}
 		}
 	}
@@ -1900,6 +1895,11 @@
 	$: if (!$rightHistory && $showRightArtifacts) {
 		rightHistory.set('');
 		showRightArtifacts.set(false);
+	}
+
+	$: if (!$bottomHistory && $showBottomArtifacts) {
+		bottomHistory.set('');
+		showBottomArtifacts.set(false);
 	}
 
 	let rightPaneSize = 600; // initial width in pixels
@@ -2091,7 +2091,7 @@
 						</div>
 						<div
 							class="flex flex-col justify-start"
-							style={$showBottomArtifacts && $isFinishGenRes ? 'height: 65%;' : ''}
+							style={$showBottomArtifacts && $isFinishGenRes ? 'height: 36%;' : ''}
 						>
 							<MessageInput
 								{history}

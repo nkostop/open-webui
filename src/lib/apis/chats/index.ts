@@ -1,5 +1,5 @@
 import { WEBUI_API_BASE_URL } from '$lib/constants';
-import { rightHistory, showRightArtifacts } from '$lib/stores';
+import { rightHistory, showBottomArtifacts, showRightArtifacts } from '$lib/stores';
 import { getTimeRange } from '$lib/utils';
 
 export const createNewChat = async (token: string, chat: object) => {
@@ -19,6 +19,7 @@ export const createNewChat = async (token: string, chat: object) => {
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
 			showRightArtifacts.set(false);
+			showBottomArtifacts.set(false);
 			return res.json();
 		})
 		.catch((err) => {

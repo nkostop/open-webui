@@ -790,7 +790,7 @@
 										class="mt-2 rounded-md overflow-hidden border border-[#77F2A1] rounded-md"
 										style="margin-bottom: 10px;"
 									>
-										<summary class="cursor-pointer px-4 py-2 font-semibold text-[#fff]">
+										<summary class="cursor-pointer px-4 py-2 font-semibold">
 											{#if message.done}
 												{status_ai_msg}
 											{:else}

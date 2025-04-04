@@ -667,8 +667,13 @@ Name: .nbg__step__card Description: Basic styling for the step card, with paddin
 /* Primary Buttons */
 .nbg__button__primary {
 	background-color: #4cd1b0;
-	color: white;
+	border-radius: 12px;
+	padding: 8px 16px;
+	color: #000;
 	border: none;
+	text-align: center;
+	display: inline-block;
+	cursor: pointer;
 }
 .nbg__button__primary__no__fill {
 	background-color: transparent;

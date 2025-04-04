@@ -5,16 +5,10 @@
 	import { jsPDF } from 'jspdf';
 	const dispatch = createEventDispatcher();
 
-	import { showRightArtifacts, showSidebar, rightHistory } from '$lib/stores';
-	import XMark from '../icons/XMark.svelte';
-	import { copyToClipboard, createMessagesList } from '$lib/utils';
-	import ArrowsPointingOut from '../icons/ArrowsPointingOut.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import SvgPanZoom from '../common/SVGPanZoom.svelte';
-	import ArrowLeft from '../icons/ArrowLeft.svelte';
+	import { showRightArtifacts, rightHistory } from '$lib/stores';
+	import { copyToClipboard } from '$lib/utils';
 
 	export let overlay = false;
-	let leftPx = '10px';
 
 	let contents = '';
 	let selectedContentIdx = '';
@@ -30,17 +24,6 @@
 			showRightArtifacts.set(false);
 		}
 	}
-
-	const submitHref = (e: Event) => {
-		const chatInput = document.getElementById('chat-input');
-		if (chatInput) {
-			let textToSet = `Give me more information about: "${e.target.innerHTML.toString()}".`;
-			chatInput.innerHTML = textToSet; // Set the innerHTML directly
-			setTimeout(() => {
-				document.getElementById('send-message-button')?.click();
-			}, 400);
-		}
-	};
 
 	function copyContent() {
 		const renderedDiv = document.getElementById('rendered-outcome');
@@ -70,28 +53,6 @@
 		}
 	}
 
-	$: {
-		const artifact = document.getElementById('RightArtifact');
-		if (artifact) {
-			const links = artifact.querySelectorAll('a');
-			links.forEach((link) => {
-				link.addEventListener('click', (e) => {
-					if ($rightHistory) {
-						submitHref(e);
-					}
-				});
-			});
-		}
-	}
-
-	$: {
-		if ($showSidebar) {
-			leftPx = '260px';
-		} else {
-			leftPx = '4px';
-		}
-	}
-
 	onDestroy(() => {
 		showRightArtifacts.set(false);
 	});
@@ -113,7 +74,7 @@
 				style="position: fixed; top: 40px; right: 5px;"
 			>
 				<button
-					class="self-center pointer-events-auto p-1 rounded-full bg-white dark:bg-gray-850"
+					class="self-center pointer-events-auto p-1 rounded-full border border-gray-300 dark:border-gray-700"
 					on:click={copyContent}
 					title="Copy to clipboard"
 				>
@@ -122,7 +83,7 @@
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke-width="2.3"
-						stroke="#fff"
+						stroke="currentColor"
 						class="w-4 h-4"
 					>
 						<path
@@ -133,7 +94,7 @@
 					</svg>
 				</button>
 				<button
-					class="self-center pointer-events-auto p-1 ml-2 rounded-full bg-white dark:bg-gray-850"
+					class="self-center pointer-events-auto p-1 ml-2 rounded-full border border-gray-300 dark:border-gray-700"
 					on:click={downloadPdf}
 					title="Download as PDF"
 				>
@@ -142,7 +103,7 @@
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke-width="2.3"
-						stroke="#fff"
+						stroke="currentColor"
 						class="w-4 h-4"
 					>
 						<path
@@ -153,7 +114,7 @@
 					</svg>
 				</button>
 				<button
-					class="self-center pointer-events-auto p-1 ml-2 rounded-full bg-white dark:bg-gray-850"
+					class="self-center pointer-events-auto p-1 ml-2 rounded-full border border-gray-300 dark:border-gray-700"
 					on:click={() => {
 						showRightArtifacts.set(false);
 					}}
@@ -163,7 +124,7 @@
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke-width="2.3"
-						stroke="#fff"
+						stroke="currentColor"
 						class="w-4 h-4"
 					>
 						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -189,7 +150,9 @@
 								}
 							}}
 						>
-							{@html $rightHistory?.split('Assistant_Response:')[0]}
+							{@html $rightHistory
+								?.split('Assistant_Response:')[0]
+								?.split('OpenBottomArtifactsStart')[0]}
 						</div>
 					{:else}
 						<div class="m-auto font-medium text-xs text-gray-900 dark:text-white">
