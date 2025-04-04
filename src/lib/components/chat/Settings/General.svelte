@@ -15,7 +15,7 @@
 
 	// General
 	let themes = ['dark', 'light', 'rose-pine dark', 'rose-pine-dawn light', 'oled-dark'];
-	let selectedTheme = 'system';
+	let selectedTheme = 'oled-dark';
 
 	let languages: Awaited<ReturnType<typeof getLanguages>> = [];
 	let lang = $i18n.language;
@@ -136,7 +136,7 @@
 					_theme === 'dark'
 						? '#171717'
 						: _theme === 'oled-dark'
-							? '#000000'
+							? '#021C4F'
 							: _theme === 'her'
 								? '#983724'
 								: '#ffffff'
@@ -149,10 +149,10 @@
 		}
 
 		if (_theme.includes('oled')) {
-			document.documentElement.style.setProperty('--color-gray-800', '#101010');
-			document.documentElement.style.setProperty('--color-gray-850', '#050505');
-			document.documentElement.style.setProperty('--color-gray-900', '#000000');
-			document.documentElement.style.setProperty('--color-gray-950', '#000000');
+			document.documentElement.style.setProperty('--color-gray-800', '#dedd');
+			document.documentElement.style.setProperty('--color-gray-850', '#567777');
+			document.documentElement.style.setProperty('--color-gray-900', '#06225B');
+			document.documentElement.style.setProperty('--color-gray-950', '#021C4F');
 			document.documentElement.classList.add('dark');
 		}
 
@@ -180,11 +180,11 @@
 						placeholder="Select a theme"
 						on:change={() => themeChangeHandler(selectedTheme)}
 					>
-						<option value="system">⚙️ {$i18n.t('System')}</option>
+						<option value="oled-dark">🌃 {$i18n.t('NBG')}</option>
 						<option value="dark">🌑 {$i18n.t('Dark')}</option>
-						<option value="oled-dark">🌃 {$i18n.t('OLED Dark')}</option>
 						<option value="light">☀️ {$i18n.t('Light')}</option>
-						<option value="her">🌷 Her</option>
+						<option value="system">⚙️ {$i18n.t('System')}</option>
+						<!-- <option value="her">🌷 Her</option> -->
 						<!-- <option value="rose-pine dark">🪻 {$i18n.t('Rosé Pine')}</option>
 						<option value="rose-pine-dawn light">🌷 {$i18n.t('Rosé Pine Dawn')}</option> -->
 					</select>
