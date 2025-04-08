@@ -1878,14 +1878,16 @@
 				showRightArtifacts.set(true);
 			}
 			if (content.includes('OpenBottomArtifactsStart')) {
-				console.log(90909090);
 				const new_message = content
 					?.split('OpenBottomArtifactsStart')[1]
 					?.split('OpenBottomArtifactsEnd')[0];
 				bottomHistory.set(new_message);
 				showBottomArtifacts.set(true);
 			}
-			if (content.includes('The process is finished. I will be happy to assist you again.')) {
+			if (
+				content.includes('The process is finished. I will be happy to assist you again.') ||
+				content.includes('Η διαδικασία ολοκληρώθηκε. Θα χαρώ να σας βοηθήσω ξανά.')
+			) {
 				bottomHistory.set('');
 				showBottomArtifacts.set(false);
 			}
@@ -1893,12 +1895,10 @@
 	}
 
 	$: if (!$rightHistory && $showRightArtifacts) {
-		rightHistory.set('');
 		showRightArtifacts.set(false);
 	}
 
 	$: if (!$bottomHistory && $showBottomArtifacts) {
-		bottomHistory.set('');
 		showBottomArtifacts.set(false);
 	}
 

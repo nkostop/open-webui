@@ -28,9 +28,19 @@
 	function copyContent() {
 		const renderedDiv = document.getElementById('rendered-outcome');
 		if (renderedDiv) {
-			copyToClipboard(renderedDiv.innerText);
-			copied = true;
-			toast.success('Copied to clipboard');
+			const range = document.createRange();
+			range.selectNode(renderedDiv);
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
+			try {
+				document.execCommand('copy');
+				copied = true;
+				toast.success('Copied to clipboard with styles');
+			} catch (err) {
+				toast.error('Failed to copy content');
+			}
+			selection?.removeAllRanges();
 			setTimeout(() => {
 				copied = false;
 			}, 2000);
