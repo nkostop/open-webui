@@ -22,10 +22,10 @@
 	onMount(() => {
 		interval = setInterval(() => {
 			// Increase counter every second
-			counter += 1;
+			counter += 2;
 			// Cycle through the colors array
 			currentColorIndex = (currentColorIndex + 1) % colors.length;
-		}, 1000);
+		}, 2000);
 	});
 
 	onDestroy(() => {
