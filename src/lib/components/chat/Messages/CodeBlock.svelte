@@ -3,7 +3,7 @@
 
 	import { v4 as uuidv4 } from 'uuid';
 
-	import { getContext, onMount, tick, onDestroy, createEventDispatcher } from 'svelte';
+	import { getContext, onMount, tick, onDestroy } from 'svelte';
 	import { copyToClipboard } from '$lib/utils';
 	import { isFinishGenRes, showArtifacts, showBottomArtifacts, showControls } from '$lib/stores';
 
@@ -20,7 +20,6 @@
 	import CommandLine from '$lib/components/icons/CommandLine.svelte';
 
 	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
 
 	export let id = '';
 
@@ -29,6 +28,7 @@
 
 	export let save = false;
 	export let run = true;
+	export let collapsed = false;
 	export let history;
 
 	export let token;
@@ -63,7 +63,6 @@
 	let result = null;
 	let files = null;
 
-	let collapsed = false;
 	let copied = false;
 	let saved = false;
 
@@ -75,7 +74,7 @@
 		saved = true;
 
 		code = _code;
-		dispatch('save', code);
+		onSave(code);
 
 		setTimeout(() => {
 			saved = false;
@@ -348,7 +347,7 @@
 		render();
 	}
 
-	$: dispatch('code', { lang, code });
+	$: onCode({ lang, code });
 
 	$: if (attributes) {
 		onAttributesUpdate();
@@ -381,8 +380,10 @@
 	};
 
 	onMount(async () => {
+		console.log('codeblock', lang, code);
+
 		if (lang) {
-			dispatch('code', { lang, code });
+			onCode({ lang, code });
 		}
 		if (document.documentElement.classList.contains('dark')) {
 			mermaid.initialize({
@@ -456,7 +457,9 @@
 
 					{#if ($config?.features?.enable_code_execution ?? true) && (lang.toLowerCase() === 'python' || lang.toLowerCase() === 'py' || (lang === '' && checkPythonCode(code)))}
 						{#if executing}
-							<div class="run-code-button bg-none border-none p-1 cursor-not-allowed">Running</div>
+							<div class="run-code-button bg-none border-none p-1 cursor-not-allowed">
+								{$i18n.t('Running')}
+							</div>
 						{:else if run}
 							<button
 								class="flex gap-1 items-center run-code-button bg-none border-none bg-gray-50 hover:bg-gray-100 dark:bg-gray-850 dark:hover:bg-gray-800 transition rounded-md px-1.5 py-0.5"

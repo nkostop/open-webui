@@ -19,6 +19,7 @@
 
 	export let user;
 
+	export let gotoMessage;
 	export let showPreviousMessage;
 	export let showNextMessage;
 	export let updateChat;
@@ -56,6 +57,7 @@
 					: (Object.values(history.messages)
 							.filter((message) => message.parentId === null)
 							.map((message) => message.id) ?? [])}
+				{gotoMessage}
 				{showPreviousMessage}
 				{showNextMessage}
 				{editMessage}
@@ -69,6 +71,7 @@
 				{messageId}
 				isLastMessage={messageId === history.currentId}
 				siblings={history.messages[history.messages[messageId].parentId]?.childrenIds ?? []}
+				{gotoMessage}
 				{showPreviousMessage}
 				{showNextMessage}
 				{updateChat}

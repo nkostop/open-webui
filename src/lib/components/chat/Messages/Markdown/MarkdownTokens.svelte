@@ -14,10 +14,13 @@
 	import CodeBlock from '$lib/components/chat/Messages/CodeBlock.svelte';
 	import MarkdownInlineTokens from '$lib/components/chat/Messages/Markdown/MarkdownInlineTokens.svelte';
 	import KatexRenderer from './KatexRenderer.svelte';
+	import AlertRenderer, { alertComponent } from './AlertRenderer.svelte';
 	import Collapsible from '$lib/components/common/Collapsible.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+
 	import Source from './Source.svelte';
+	import { settings } from '$lib/stores';
 
 	const dispatch = createEventDispatcher();
 
@@ -86,6 +89,7 @@
 			<CodeBlock
 				{history}
 				id={`${id}-${tokenIdx}`}
+				collapsed={$settings?.collapseCodeBlocks ?? false}
 				{token}
 				lang={token?.lang ?? ''}
 				code={token?.text ?? ''}
@@ -121,7 +125,7 @@
 									class="px-3! py-1.5! cursor-pointer border border-gray-100 dark:border-gray-850"
 									style={token.align[headerIdx] ? '' : `text-align: ${token.align[headerIdx]}`}
 								>
-									<div class="flex flex-col gap-1.5 text-left">
+									<div class="gap-1.5 text-left">
 										<div class="shrink-0 break-normal">
 											<MarkdownInlineTokens
 												{history}
@@ -143,7 +147,7 @@
 										class="px-3! py-1.5! text-gray-900 dark:text-white w-max border border-gray-100 dark:border-gray-850"
 										style={token.align[cellIdx] ? '' : `text-align: ${token.align[cellIdx]}`}
 									>
-										<div class="flex flex-col break-normal">
+										<div class="break-normal">
 											<MarkdownInlineTokens
 												{history}
 												id={`${id}-${tokenIdx}-row-${rowIdx}-${cellIdx}`}
@@ -174,14 +178,19 @@
 			</div>
 		</div>
 	{:else if token.type === 'blockquote'}
-		<blockquote dir="auto">
-			<svelte:self id={`${id}-${tokenIdx}`} tokens={token.tokens} {onTaskClick} {onSourceClick} />
-		</blockquote>
+		{@const alert = alertComponent(token)}
+		{#if alert}
+			<AlertRenderer {token} {alert} />
+		{:else}
+			<blockquote dir="auto">
+				<svelte:self id={`${id}-${tokenIdx}`} tokens={token.tokens} {onTaskClick} {onSourceClick} />
+			</blockquote>
+		{/if}
 	{:else if token.type === 'list'}
 		{#if token.ordered}
-			<ol start={token.start || 1}>
+			<ol start={token.start || 1} dir="auto">
 				{#each token.items as item, itemIdx}
-					<li dir="auto" class="text-start">
+					<li class="text-start">
 						{#if item?.task}
 							<input
 								class=" translate-y-[1px] -translate-x-1"
@@ -211,9 +220,9 @@
 				{/each}
 			</ol>
 		{:else}
-			<ul>
+			<ul dir="auto">
 				{#each token.items as item, itemIdx}
-					<li dir="auto" class="text-start">
+					<li class="text-start">
 						{#if item?.task}
 							<input
 								class=" translate-y-[1px] -translate-x-1"
@@ -246,6 +255,7 @@
 	{:else if token.type === 'details'}
 		<Collapsible
 			title={token.summary}
+			open={$settings?.expandDetails ?? false}
 			attributes={token?.attributes}
 			className="w-full space-y-1"
 			dir="auto"
@@ -290,7 +300,7 @@
 		</p>
 	{:else if token.type === 'text'}
 		{#if top}
-			<p dir="auto">
+			<p>
 				{#if token.tokens}
 					<MarkdownInlineTokens
 						{history}
